@@ -12,21 +12,30 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import static android.media.MediaMetadataRetriever.OPTION_CLOSEST;
 import static android.os.Build.VERSION_CODES.M;
+import static com.example.androidpractice_3.R.raw.piper;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
     @RequiresApi(api = M)
     private VideoView videoView_1;
     private VideoView videoView_2;
@@ -61,7 +70,10 @@ public class MainActivity extends AppCompatActivity {
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
         setContentView(R.layout.activity_main);
-//        Toolbar toolbar=(Toolbar)findViewById(R.id.toolbar);
+
+
+
+        //        Toolbar toolbar=(Toolbar)findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
 /* ***********************获取手机屏幕宽高比**************************/
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -82,22 +94,61 @@ public class MainActivity extends AppCompatActivity {
         videoView_2 = (VideoView) findViewById(R.id.video_2);
         videoView_3 = (VideoView) findViewById(R.id.video_3);
 /* ***********************获取VideoView路径**************************/
-        //        File file2= new File(Environment.getExternalStorageDirectory(),"youlookscared.mp4");
-        //        videoView_2.setVideoPath(file2.getPath());
-        //        File file1= new File(Environment.getExternalStorageDirectory(),"Piper.mp4");
-        //        videoView_1.setVideoPath(file1.getPath());
-        //        File file3= new File(Environment.getExternalStorageDirectory(),"Embarked.mp4");
-        //        videoView_3.setVideoPath(file3.getPath());
 
-        String uri1 = "android.resource://" + MainActivity.this.getPackageName() + "/" + R.raw.piper;
-        Uri uri_1 = Uri.parse(uri1);
+//        File file2= new File(Environment.getExternalStorageDirectory(),"youlookscared.mp4");
+//        videoView_2.setVideoPath(file2.getPath());
+//        File file1= new File(Environment.getExternalStorageDirectory(),"Piper.mp4");
+//        videoView_1.setVideoPath(file1.getPath());
+//        File file3= new File(Environment.getExternalStorageDirectory(),"ForTheBirds.mp4");
+//        videoView_3.setVideoPath(file3.getPath());
+
+        String uri1 = "android.resource://" + MainActivity.this.getPackageName() + "/" + piper;
+        final Uri uri_1 = Uri.parse(uri1);
         videoView_1.setVideoURI(uri_1);
         String uri2 = "android.resource://" + MainActivity.this.getPackageName() + "/" + R.raw.youlookscared;
-        Uri uri_2 = Uri.parse(uri2);
+        final Uri uri_2 = Uri.parse(uri2);
         videoView_2.setVideoURI(uri_2);
         String uri3 = "android.resource://" + MainActivity.this.getPackageName() + "/" + R.raw.forthebirds;
-        Uri uri_3 = Uri.parse(uri3);
+        final Uri uri_3 = Uri.parse(uri3);
         videoView_3.setVideoURI(uri_3);
+        Button button=(Button)findViewById(R.id.sys_player);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+    //                String uri4= Environment.getExternalStorageDirectory().getPath()+"/Piper.mp4";
+    //                Uri uri_4=Uri.parse("file://"+uri4);
+    //                Intent intent = new Intent(Intent.ACTION_VIEW);
+    ////                intent.setAction(Intent.ACTION_VIEW);
+    //                String type = "video/mp4";
+    //                intent.setDataAndType(uri_4,type);
+    //                try{
+    //                    MainActivity.this.startActivity(intent);
+    //                }catch (Exception e){
+    //                    Toast.makeText(MainActivity.this,"无法播放",Toast.LENGTH_SHORT).show();
+    //                    e.printStackTrace();
+    //                }
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        InputStream is =getResources().openRawResource(R.raw.piper);
+                        int byteRead;
+                        try {
+                            File piper = new File(getExternalCacheDir(), "viper.mp4");
+                            FileOutputStream fs = new FileOutputStream(piper);
+                            byte[] buffer = new byte[1024];
+                            while ((byteRead = is.read(buffer)) != -1) {
+                                fs.write(buffer, 0, byteRead);
+                            }
+                            is.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        handler.sendEmptyMessage(0);
+                    }
+                }).start();
+            }
+        });
+
 /* ***********************RalativeLayout全屏化**************************/
 //        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
 //                RelativeLayout.LayoutParams.MATCH_PARENT,
@@ -183,6 +234,17 @@ public class MainActivity extends AppCompatActivity {
 /* ************************初始化进度条*************************/
         initControllerBar();
     }
+    private Handler handler = new Handler(){
+        public void handleMessage(Message msg){
+            switch (msg.what){
+                case 0:
+                    Toast.makeText(MainActivity.this,"缓冲完成，可以调用系统播放器",Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
 /* ************************运行时权限申请*************************/
 //        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 //            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
@@ -214,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
 //        }
 //    }
 
-    /* ************************进度条展示*************************/
+/* ************************进度条展示*************************/
     private void initControllerBar() {
         videoController1 = new MediaController(MainActivity.this);
         videoView_1.setMediaController(videoController1);
@@ -233,7 +295,7 @@ public class MainActivity extends AppCompatActivity {
         videoController3.setMediaPlayer(videoView_3);
         videoController3.setAnchorView(videoView_3);
         videoController3.setPadding(0, 0, 0, 0);
-/* ************************进度条上下视频切换*************************/
+    /* ************************进度条上下视频切换*************************/
         videoController1.setPrevNextListeners(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -291,24 +353,21 @@ public class MainActivity extends AppCompatActivity {
     public void onConfigurationChanged(Configuration newConfig) {
         Configuration cfg=getResources().getConfiguration();
         if(cfg.orientation == Configuration.ORIENTATION_LANDSCAPE){
-//            getSupportActionBar(toolbar).hide();
             RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.MATCH_PARENT);
+                    RelativeLayout.LayoutParams.MATCH_PARENT,
+                    RelativeLayout.LayoutParams.MATCH_PARENT);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            iv1.setLayoutParams(layoutParams);
-            iv2.setLayoutParams(layoutParams);
-            iv3.setLayoutParams(layoutParams);
             videoView_1.setLayoutParams(layoutParams);
             videoView_2.setLayoutParams(layoutParams);
             videoView_3.setLayoutParams(layoutParams);
-//            Toast.makeText(this,"现在是横屏",Toast.LENGTH_SHORT).show();
+//            iv1.setLayoutParams(layoutParams);
+//            iv2.setLayoutParams(layoutParams);
+//            iv3.setLayoutParams(layoutParams);
         }
-        if(cfg.orientation==ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
-            Toast.makeText(this,"现在是竖屏",Toast.LENGTH_SHORT).show();
+        if(cfg.orientation== ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
 
         }
         super.onConfigurationChanged(newConfig);
@@ -334,36 +393,70 @@ public class MainActivity extends AppCompatActivity {
                     break;
 
                 case MotionEvent.ACTION_UP:
-                    if (x > 10 && x < 125 && y > 300 && y <400) {
-                        if(flag) {
-                            switch (v.getId()) {
-                                case R.id.mmr_bitmap1:
-//                                        MainActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-//                                        videoView_1.setLayoutParams(layoutParams);
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                        if (x > 10 && x < 125 && y > 300 && y < 400) {
+                            if (flag) {
+                                switch (v.getId()) {
+                                    case R.id.mmr_bitmap1:
                                         videoView_1.setVisibility(View.VISIBLE);
                                         videoView_1.start();
                                         flag = false;
-                                    break;
-                                case R.id.mmr_bitmap2:
-//                                        MainActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-//                                        videoView_2.setLayoutParams(layoutParams);
+                                        break;
+                                    case R.id.mmr_bitmap2:
                                         videoView_2.setVisibility(View.VISIBLE);
                                         videoView_2.start();
                                         flag = false;
                                         break;
-                                case R.id.mmr_bitmap3:
+                                    case R.id.mmr_bitmap3:
                                         videoView_3.setVisibility(View.VISIBLE);
                                         videoView_3.start();
                                         flag = false;
-//                                    MainActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-//                                    videoView_3.setLayoutParams(layoutParams);
                                         break;
-                                default:
+                                    default:
+                                }
                             }
                         }
+                    }else if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+
+                            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                                    RelativeLayout.LayoutParams.MATCH_PARENT,
+                                    RelativeLayout.LayoutParams.MATCH_PARENT);
+                            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                            videoView_1.setLayoutParams(layoutParams);
+                            videoView_2.setLayoutParams(layoutParams);
+                            videoView_3.setLayoutParams(layoutParams);
+
+                        if (x > 250 && x < 350 && y > 300 && y < 400) {
+                            if (flag) {
+                                switch (v.getId()) {
+                                    case R.id.mmr_bitmap1:
+                                        videoView_1.setVisibility(View.VISIBLE);
+                                        videoView_1.start();
+                                        videoView_1.setLayoutParams(layoutParams);
+                                        flag = false;
+                                        break;
+                                    case R.id.mmr_bitmap2:
+                                        videoView_2.setVisibility(View.VISIBLE);
+                                        videoView_2.start();
+                                        videoView_2.setLayoutParams(layoutParams);
+                                        flag = false;
+                                        break;
+                                    case R.id.mmr_bitmap3:
+                                        videoView_3.setVisibility(View.VISIBLE);
+                                        videoView_3.start();
+                                        videoView_3.setLayoutParams(layoutParams);
+                                        flag = false;
+                                        break;
+                                    default:
+                                }
+                            }
                         }
-                        break;
                     }
+                    break;
+                }
             return true;
         }
     }
